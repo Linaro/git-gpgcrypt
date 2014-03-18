@@ -1,0 +1,61 @@
+Transparent git encryption using GPG public key infrastructure
+==============================================================
+
+This script allows to encrypt some (or all) files in a git repository using
+existing GPG public key infrastructure. It allows to set access list of
+key IDs which can access files, and then all decryption and encryption
+is handled transparently, while performing usual git operations (assuming
+current user is in existing access list, and has public keys of other
+recipients).
+
+git-gpgcrypt is inspired by (and based on) https://github.com/shadowhand/git-encrypt
+project, which uses symmetric encryption scheme and
+http://thread.gmane.org/gmane.comp.version-control.git/113124/focus=113189
+thread which initially explored using GPG for git encryption.
+
+Usage:
+
+Installation
+------------
+1. git clone https://git.linaro.org/infrastructure/git-gpgcrypt.git
+2. Put git-gpgcrypt/git-gpgcrypt somewhere on PATH
+
+
+New repository
+--------------
+1. git init
+2. Create ".recipients" file listing key names of persons who may access
+encrypted files in the repository. These may be either key IDs or
+substrings of user IDs (e.g., emails). Note that corresponding keys must
+be already present in your keyring (TODO: add convenience command to import
+keys from keyserver).
+3. git gpgcrypt init
+4. Review .gitattributes file for file encryption settings (it's not required
+to encrypt all files; in particular, default .gitattributes makes README and
+some other files plain-text).
+5. Add files and use repository as usual.
+
+Cloned repository
+-----------------
+1. git clone
+2. git gpgcrypt init
+
+Update list of recipients
+-------------------------
+1. Update list in .recipients
+2. git gpgcrypt update
+3. TODO: Set up git hook for automatic update.
+
+
+Implementation details
+----------------------
+GPG encryption is non-deterministic (meaning that encrypting same cleartext
+2 times produces different ciphertexts). So, if GPG encryption is used
+directly, it can lead to spurious empty commits (specifically it was found
+that after cloning and initializing existing repository, freshly decrypted
+files are marked as changed, even though cleartext matches one in HEAD).
+To work that around, some of GPG message encryption process was reimplemented:
+files are encrypted using deterministic symmetric cipher, while cipher key
+is encrypted using GPG for each of repository recipients. That roughly
+corresponds to how GPG handles message encryptions itself (but it applies
+additional padding and randomization).

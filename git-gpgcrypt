@@ -1,0 +1,109 @@
+#!/bin/bash
+
+if [ -z "$GIT_DIR" ]; then
+    GIT_DIR=".git"
+fi
+
+CIPHER=aes-256-ecb
+SALT="123456789abcdef"
+
+init() {
+    # From git 1.7.8+, the .git in submodule folder is a file containing the actual path of gitdir.
+    if [ -f "$GIT_DIR" ]; then
+        GIT_DIR=`cat $GIT_DIR | sed 's/^gitdir: //'`
+    fi
+
+    if [ ! -d "$GIT_DIR" ]; then
+        echo "Not a git repository. Did you run 'git init'?"
+        exit 1
+    fi
+
+    if [ ! -f .recipients ]; then
+        echo "Before running 'init' create .recipients file, and add to it target key IDs"
+        echo "(one per line). IDs can be either key fingerprints, substrings of user IDs"
+        echo "(e.g., emails) or whatever else gpg accepts for --recipient option (man gpg)."
+        exit 1
+    fi
+
+    if [ -f .key ]; then
+        git diff-index --quiet HEAD
+        clean=$?
+        if [ $clean -eq 1 ]; then
+            echo "Intended to initialize gpgcrypt in fresh clone, but your working copy/index"
+            echo "is not clean. Not doing anything. If you intended to initialize a fresh"
+            echo "clone either, something went wrong, you may need to clone again (or deal with"
+            echo "pending changes, then run '$0 init' again, then"
+            echo "'git checkout HEAD^; git checkout master', or remove everything but .git"
+            echo "directory and run 'git checkout .', or )"
+        else
+            setup_filters
+            git checkout -f .
+            echo "Initialized a clone"
+        fi
+        return
+    fi
+
+    echo "* filter=encrypt diff=encrypt" >>.gitattributes
+    echo "# You probably want to describe in README why one can't see anything useful in other files" >>.gitattributes
+    echo "README !filter !diff" >>.gitattributes
+    echo "# Don't encrypt recipient list, you can comment this to encrypt it" >>.gitattributes
+    echo ".recipients !filter !diff" >>.gitattributes
+    echo "# Never encrypt .gitattributes and .key files" >>.gitattributes
+    echo ".gitattributes !filter !diff" >>.gitattributes
+    echo ".key !filter !diff" >>.gitattributes
+    echo "[merge]" >>.gitattributes
+    echo "    renormalize=true" >>.gitattributes
+    touch .recipients
+
+    KEY=$(cat /dev/urandom | LC_ALL="C" tr -dc '!@#$%^&*()_A-Z-a-z-0-9' | head -c32)
+
+    encrypt_key "$KEY"
+
+    setup_filters
+
+    echo "git gpgcrypt initialized."
+    echo
+
+    git add .gitattributes .recipients .key
+    git commit .gitattributes .recipients .key -m "Initialized git gpgcrypt state."
+}
+
+setup_filters() {
+    git config filter.encrypt.smudge "git-gpgcrypt smudge"
+    git config filter.encrypt.clean "git-gpgcrypt clean"
+    git config diff.encrypt.textconv "git-gpgcrypt diff"
+}
+
+get_key() {
+    gpg -d -q --batch --no-tty .key
+}
+
+encrypt_key() {
+    echo "$1" | gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr >.key
+}
+
+case "$1" in
+    init)
+        init
+        ;;
+    update)
+        encrypt_key "$(get_key)"
+        ;;
+    clean)
+        #gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr
+        openssl enc -base64 -$CIPHER -S $SALT -k "$(get_key)"
+        ;;
+    smudge)
+        #gpg -d -q --batch --no-tty || cat
+        openssl enc -d -base64 -$CIPHER -k "$(get_key)" 2> /dev/null || cat
+        ;;
+    diff)
+        #gpg -d -q --batch --no-tty "$2" 2>/dev/null || cat "$2"
+        openssl enc -d -base64 -$CIPHER -k "$(get_key)" -in "$2" 2> /dev/null || cat "$2"
+        ;;
+    *)
+        echo "$0 - Set up transparent GPG encryption for files in git repository"
+        echo "usage: $0 init"
+        exit 1
+        ;;
+esac
