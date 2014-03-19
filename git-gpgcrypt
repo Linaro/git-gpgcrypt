@@ -25,7 +25,7 @@ init() {
         exit 1
     fi
 
-    if [ -f .key ]; then
+    if [ -f .gpgcrypt-key ]; then
         git diff-index --quiet HEAD
         clean=$?
         if [ $clean -eq 1 ]; then
@@ -48,10 +48,9 @@ init() {
     echo "README !filter !diff" >>.gitattributes
     echo "# Don't encrypt recipient list, you can comment this to encrypt it" >>.gitattributes
     echo ".recipients !filter !diff" >>.gitattributes
-    echo "# Never encrypt .gitattributes, .key, .salt files" >>.gitattributes
+    echo "# Never encrypt .gitattributes, .gpgcrypt-* files" >>.gitattributes
     echo ".gitattributes !filter !diff" >>.gitattributes
-    echo ".key !filter !diff" >>.gitattributes
-    echo ".salt !filter !diff" >>.gitattributes
+    echo ".gpgcrypt-* !filter !diff" >>.gitattributes
     echo "[merge]" >>.gitattributes
     echo "    renormalize=true" >>.gitattributes
     touch .recipients
@@ -60,15 +59,15 @@ init() {
     encrypt_key "$KEY"
 
     SALT=$(head -c 10 < /dev/random | md5sum | cut -c-16)
-    echo $SALT >.salt
+    echo $SALT >.gpgcrypt-salt
 
     setup_filters
 
     echo "git gpgcrypt initialized."
     echo
 
-    git add .gitattributes .recipients .key .salt
-    git commit .gitattributes .recipients .key .salt -m "Initialized git gpgcrypt state."
+    git add .gitattributes .recipients .gpgcrypt-key .gpgcrypt-salt
+    git commit .gitattributes .recipients .gpgcrypt-key .gpgcrypt-salt -m "Initialized git gpgcrypt state."
 }
 
 setup_filters() {
@@ -78,15 +77,15 @@ setup_filters() {
 }
 
 get_key() {
-    gpg -d -q --batch --no-tty .key
+    gpg -d -q --batch --no-tty .gpgcrypt-key
 }
 
 get_salt() {
-    cat .salt
+    cat .gpgcrypt-salt
 }
 
 encrypt_key() {
-    echo "$1" | gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr >.key
+    echo "$1" | gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr >.gpgcrypt-key
 }
 
 case "$1" in
