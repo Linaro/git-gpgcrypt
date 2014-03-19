@@ -48,24 +48,27 @@ init() {
     echo "README !filter !diff" >>.gitattributes
     echo "# Don't encrypt recipient list, you can comment this to encrypt it" >>.gitattributes
     echo ".recipients !filter !diff" >>.gitattributes
-    echo "# Never encrypt .gitattributes and .key files" >>.gitattributes
+    echo "# Never encrypt .gitattributes, .key, .salt files" >>.gitattributes
     echo ".gitattributes !filter !diff" >>.gitattributes
     echo ".key !filter !diff" >>.gitattributes
+    echo ".salt !filter !diff" >>.gitattributes
     echo "[merge]" >>.gitattributes
     echo "    renormalize=true" >>.gitattributes
     touch .recipients
 
     KEY=$(cat /dev/urandom | LC_ALL="C" tr -dc '!@#$%^&*()_A-Z-a-z-0-9' | head -c32)
-
     encrypt_key "$KEY"
+
+    SALT=$(head -c 10 < /dev/random | md5sum | cut -c-16)
+    echo $SALT >.salt
 
     setup_filters
 
     echo "git gpgcrypt initialized."
     echo
 
-    git add .gitattributes .recipients .key
-    git commit .gitattributes .recipients .key -m "Initialized git gpgcrypt state."
+    git add .gitattributes .recipients .key .salt
+    git commit .gitattributes .recipients .key .salt -m "Initialized git gpgcrypt state."
 }
 
 setup_filters() {
@@ -76,6 +79,10 @@ setup_filters() {
 
 get_key() {
     gpg -d -q --batch --no-tty .key
+}
+
+get_salt() {
+    cat .salt
 }
 
 encrypt_key() {
@@ -91,7 +98,7 @@ case "$1" in
         ;;
     clean)
         #gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr
-        openssl enc -base64 -$CIPHER -S $SALT -k "$(get_key)"
+        openssl enc -base64 -$CIPHER -S "$(get_salt)" -k "$(get_key)"
         ;;
     smudge)
         #gpg -d -q --batch --no-tty || cat
