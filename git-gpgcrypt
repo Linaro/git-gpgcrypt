@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ -z "$GIT_DIR" ]; then
     GIT_DIR=".git"
 fi
@@ -85,7 +87,7 @@ get_salt() {
 }
 
 encrypt_key() {
-    echo "$1" | gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr >.gpgcrypt-key
+    echo "$1" | gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr --output .gpgcrypt-key
 }
 
 case "$1" in
