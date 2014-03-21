@@ -79,7 +79,7 @@ setup_filters() {
 }
 
 get_key() {
-    gpg -d -q --batch --no-tty .gpgcrypt-key
+    gpg -d -q .gpgcrypt-key
 }
 
 get_salt() {

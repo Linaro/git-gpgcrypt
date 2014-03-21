@@ -19,6 +19,11 @@ Installation
 ------------
 1. git clone https://git.linaro.org/infrastructure/git-gpgcrypt.git
 2. Put git-gpgcrypt/git-gpgcrypt somewhere on PATH
+3. Make sure you have GPG agent set up and running - either GPG's own
+gpg-agent or integration with your desktop environment (most Linux
+desktop environment have this out of the box, e.g. in Ubuntu). It's
+impractical to use git-gpgcrypt without an agent - you will get multiple
+password prompts for each git command.
 
 
 New repository
