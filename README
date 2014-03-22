@@ -31,9 +31,10 @@ New repository
 1. git init
 2. Create ".recipients" file listing key names of persons who may access
 encrypted files in the repository. These may be either key IDs or
-substrings of user IDs (e.g., emails). Note that corresponding keys must
-be already present in your keyring (TODO: add convenience command to import
-keys from keyserver).
+substrings of user IDs (e.g., emails). See "How to specify a user ID" in
+man gpg for more details. Note that corresponding keys must be already
+present in your keyring (TODO: add convenience command to import keys from
+keyserver).
 3. git gpgcrypt init
 4. Review .gitattributes file for file encryption settings (it's not required
 to encrypt all files; in particular, default .gitattributes makes README and
