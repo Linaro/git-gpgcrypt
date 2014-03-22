@@ -87,7 +87,7 @@ get_salt() {
 }
 
 encrypt_key() {
-    echo "$1" | gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr --output .gpgcrypt-key
+    echo "$1" | gpg -ea --group gr="$(sed -r -e 's/ +#[^#]*//' .recipients | tr '\n' ' ')" -r gr --output .gpgcrypt-key
 }
 
 case "$1" in
@@ -96,6 +96,15 @@ case "$1" in
         ;;
     update)
         encrypt_key "$(get_key)"
+        ;;
+    search-keys)
+        echo "!!!!! WARNING !!!!!"
+        echo "Be careful before importing keys and never use a keys whose"
+        echo "fingerprint you didn't verify directly with the owner."
+        echo "Press Enter if you are sure you want to continue or Ctrl+C to quit."
+        echo "!!!!! WARNING !!!!!"
+        read
+        sed -r -e 's/ +#[^#]*//' .recipients | xargs -d "\n" -n1 gpg --keyserver keyserver.ubuntu.com --search-keys
         ;;
     clean)
         #gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr

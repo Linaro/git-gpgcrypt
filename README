@@ -30,21 +30,29 @@ New repository
 --------------
 1. git init
 2. Create ".recipients" file listing key names of persons who may access
-encrypted files in the repository. These may be either key IDs or
-substrings of user IDs (e.g., emails). See "How to specify a user ID" in
-man gpg for more details. Note that corresponding keys must be already
-present in your keyring (TODO: add convenience command to import keys from
-keyserver).
-3. git gpgcrypt init
-4. Review .gitattributes file for file encryption settings (it's not required
+encrypted files in the repository. The format for each line is:
+
+<user sel> [#<comment>]
+
+User selector can be key IDs, fingerprints, substrings of user IDs (e.g.,
+emails). See "How to specify a user ID" in man gpg for more details.
+3. Corresponding keys must be already present in your keyring. If that's
+not the case, your can import keys from keyserver using
+"git gpgcrypt search-keys" command. WARNING: You should verify each key
+imported thoroughly, by default treating unverified keys as counterfeit.
+4. git gpgcrypt init
+5. Review .gitattributes file for file encryption settings (it's not required
 to encrypt all files; in particular, default .gitattributes makes README and
 some other files plain-text).
-5. Add files and use repository as usual.
+6. Add files and use repository as usual.
 
 Cloned repository
 -----------------
 1. git clone
 2. git gpgcrypt init
+3. git gpgcrypt search-keys, if you don't have all recipient keys in your
+keyring. WARNING: You should verify each key imported thoroughly, by default
+treating unverified keys as counterfeit.
 
 Update list of recipients
 -------------------------
