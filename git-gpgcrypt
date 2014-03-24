@@ -120,7 +120,7 @@ case "$1" in
         ;;
     *)
         echo "$0 - Set up transparent GPG encryption for files in git repository"
-        echo "usage: $0 init"
+        echo "usage: $0 init|search-keys|update"
         exit 1
         ;;
 esac
