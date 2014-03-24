@@ -87,7 +87,8 @@ get_salt() {
 }
 
 encrypt_key() {
-    echo "$1" | gpg -ea --group gr="$(sed -r -e 's/ +#[^#]*//' .recipients | tr '\n' ' ')" -r gr --output .gpgcrypt-key
+    echo "$1" | gpg -ea --group gr="$(sed -r -e 's/ +#[^#]*//' .recipients | tr '\n' ' ')" -r gr --output .gpgcrypt-key.tmp
+    mv .gpgcrypt-key.tmp .gpgcrypt-key
 }
 
 case "$1" in
