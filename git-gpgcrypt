@@ -103,7 +103,7 @@ encrypt_key() {
 # Try to get symmetric encryption key and fail fast if we
 # can't do that, which means that GPG cannot decrypt it
 # with user's private key.
-get_key
+get_key >/dev/null
 
 case "$1" in
     init)
