@@ -95,8 +95,13 @@ get_salt() {
     cat .gpgcrypt-salt
 }
 
+get_recipients() {
+    # Filter lines starting with "#" and trailing "# <text>" in lines
+    grep -E "^[^#]" .recipients | sed -r -e 's/ +#[^#]*//'
+}
+
 encrypt_key() {
-    echo "$1" | gpg -ea --group gr="$(sed -r -e 's/ +#[^#]*//' .recipients | tr '\n' ' ')" -r gr --output .gpgcrypt-key.tmp
+    echo "$1" | gpg -ea --group gr="$(get_recipients | tr '\n' ' ')" -r gr --output .gpgcrypt-key.tmp
     mv .gpgcrypt-key.tmp .gpgcrypt-key
 }
 
@@ -119,7 +124,7 @@ case "$1" in
         echo "Press Enter if you are sure you want to continue or Ctrl+C to quit."
         echo "!!!!! WARNING !!!!!"
         read
-        sed -r -e 's/ +#[^#]*//' .recipients | xargs -d "\n" -n1 gpg --keyserver keyserver.ubuntu.com --search-keys
+        get_recipients | xargs -d "\n" -n1 gpg --keyserver keyserver.ubuntu.com --search-keys
         ;;
     clean)
         #gpg -ea --group gr="$(cat .recipients|tr '\n' ' ')" -r gr
