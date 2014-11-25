@@ -79,7 +79,16 @@ setup_filters() {
 }
 
 get_key() {
+    set +e
     gpg -d -q .gpgcrypt-key
+    rc=$?
+    if [ $rc -ne 0 ]; then
+        echo "*ERROR*: Unable to decrypt key, gpg result: $rc" >/dev/stderr
+        echo "Are you among recipients of this repository? Is private key" >/dev/stderr
+        echo "which can prove that available to GPG on this machine?" >/dev/stderr
+        exit $rc
+    fi
+    set -e
 }
 
 get_salt() {
@@ -90,6 +99,11 @@ encrypt_key() {
     echo "$1" | gpg -ea --group gr="$(sed -r -e 's/ +#[^#]*//' .recipients | tr '\n' ' ')" -r gr --output .gpgcrypt-key.tmp
     mv .gpgcrypt-key.tmp .gpgcrypt-key
 }
+
+# Try to get symmetric encryption key and fail fast if we
+# can't do that, which means that GPG cannot decrypt it
+# with user's private key.
+get_key
 
 case "$1" in
     init)
