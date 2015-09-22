@@ -58,7 +58,8 @@ Update list of recipients
 -------------------------
 1. Update list in .recipients
 2. git gpgcrypt update
-3. TODO: Set up git hook for automatic update.
+3. Commit and push changes to .recipients, etc.
+4. TODO: Set up git hook for automatic update.
 
 
 Implementation details
